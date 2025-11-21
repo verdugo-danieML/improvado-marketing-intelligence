@@ -48,15 +48,34 @@ streamlit run app.py
 ## 📁 Project Structure
 ```
 improvado-marketing-intelligence/
-├── data/                    # Local SQLite storage
-├── src/
-│   ├── etl/                # ETL scripts
-│   ├── ml/                 # NLP models
-│   └── dashboard/          # Streamlit components
-├── app.py                  # Main entry point
 ├── requirements.txt
 ├── .env.example
-└── README.md
+├── .gitignore
+├── LICENSE
+├── README.md
+├── config.py
+├── app.py
+├── setup.sh
+├── run_pipeline.sh
+│
+├── src/
+│   ├── __init__.py
+│   ├── etl/
+│   │   ├── __init__.py
+│   │   ├── generate_kpi_data.py
+│   │   ├── extract_reddit.py
+│   │   ├── process_data.py
+│   │   └── load_to_sqlite.py
+│   ├── ml/
+│   │   ├── __init__.py
+│   │   ├── sentiment_analysis.py
+│   │   └── topic_modeling.py
+│   └── dashboard/
+│       ├── __init__.py
+│       └── components.py
+│
+├── data/
+└── logs/
 ```
 
 ## 🔑 Key Technologies
