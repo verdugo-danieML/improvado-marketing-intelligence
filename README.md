@@ -46,6 +46,7 @@ python src/etl/generate_kpi_data.py
 streamlit run app.py
 ```
 ## 📁 Project Structure
+```
 improvado-marketing-intelligence/
 ├── data/                    # Local SQLite storage
 ├── src/
@@ -56,6 +57,7 @@ improvado-marketing-intelligence/
 ├── requirements.txt
 ├── .env.example
 └── README.md
+```
 
 ## 🔑 Key Technologies
 * Frontend: Streamlit 1.31
