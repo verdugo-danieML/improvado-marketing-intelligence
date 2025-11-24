@@ -29,7 +29,7 @@ This PoC showcases:
 
 ```bash
 # Clone repository
-git clone <your-repo-url>
+git clone https://github.com/verdugo-danieML/improvado-marketing-intelligence.git
 cd improvado-marketing-intelligence
 
 # Create virtual environment

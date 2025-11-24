@@ -16,7 +16,7 @@ praw==7.7.1
 
 # Machine Learning & NLP
 transformers==4.37.2
-torch==2.1.2
+torch>=2.2.0
 scikit-learn==1.4.0
 scipy==1.12.0
 
