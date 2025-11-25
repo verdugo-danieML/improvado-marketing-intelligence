@@ -22,8 +22,6 @@ from src.dashboard.components import (
     display_critical_alerts,
     create_topic_distribution,
     create_channel_performance_table,
-    create_data_source_table,
-    create_campaign_table,
     create_data_source_table_compact,
     create_campaign_table_compact
 )
@@ -39,63 +37,75 @@ st.set_page_config(
 # Custom CSS for Improvado exact branding
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* Global Font */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
     /* Main background */
+    .stApp {
+        background-color: #F3F4F6;
+    }
+    
     .main {
-        background-color: #FFFFFF;
+        background-color: #F3F4F6;
+    }
+    
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #2D2B55;
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
+        color: #E5E7EB;
+    }
+    
+    [data-testid="stSidebar"] h3 {
+        color: #9CA3AF;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 20px;
+    }
+    
+    /* Sidebar Radio Buttons */
+    .stRadio > label {
+        color: #E5E7EB !important;
     }
     
     /* Remove default padding */
     .block-container {
-        padding-top: 2rem;
+        padding-top: 3rem;
         padding-bottom: 2rem;
-        padding-left: 3rem;
-        padding-right: 3rem;
+        padding-left: 2rem;
+        padding-right: 2rem;
     }
     
-    /* KPI Cards */
-    .stMetric {
+    /* Card Styling */
+    .css-card {
         background-color: #FFFFFF;
-        padding: 18px;
-        border-radius: 12px;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         border: 1px solid #E5E7EB;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    
-    /* Metric label */
-    [data-testid="stMetricLabel"] {
-        color: #6B7280;
-        font-size: 12px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    /* Metric value */
-    [data-testid="stMetricValue"] {
-        color: #1F2937;
-        font-size: 26px;
-        font-weight: 700;
-    }
-    
-    /* Metric delta */
-    [data-testid="stMetricDelta"] {
-        font-size: 11px;
-        font-weight: 600;
+        margin-bottom: 1rem;
     }
     
     /* Headers */
     h1 {
-        color: #1F2937;
+        color: #111827;
         font-weight: 700;
-        font-size: 32px;
-        margin-bottom: 1.5rem;
+        font-size: 24px;
+        margin-bottom: 1rem;
     }
     
     h2 {
         color: #374151;
         font-weight: 600;
         font-size: 18px;
-        margin-top: 2rem;
+        margin-top: 1.5rem;
         margin-bottom: 1rem;
     }
     
@@ -103,90 +113,68 @@ st.markdown("""
         color: #4B5563;
         font-weight: 600;
         font-size: 14px;
-        margin-bottom: 0.75rem;
-    }
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #1F2937;
-        padding-top: 2rem;
-    }
-    
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
-        color: #F9FAFB;
-    }
-    
-    [data-testid="stSidebar"] h3 {
-        color: #F9FAFB;
-    }
-    
-    /* Radio buttons in sidebar */
-    [data-testid="stSidebar"] .stRadio > label {
-        color: #F9FAFB;
-        font-size: 14px;
-    }
-    
-    [data-testid="stSidebar"] .stRadio [role="radiogroup"] {
-        gap: 0.5rem;
+        margin-bottom: 0.5rem;
     }
     
     /* Dataframe styling */
     .stDataFrame {
+        border: none !important;
+    }
+    
+    /* Custom Metric Card */
+    .metric-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         border: 1px solid #E5E7EB;
-        border-radius: 8px;
-        font-size: 13px;
+        height: 100%;
     }
     
-    /* Table headers */
-    .stDataFrame thead tr th {
-        background-color: #F9FAFB !important;
-        color: #6B7280 !important;
-        font-weight: 600 !important;
-        font-size: 12px !important;
+    .metric-label {
+        color: #6B7280;
+        font-size: 12px;
+        font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 10px 12px !important;
+        margin-bottom: 4px;
     }
     
-    /* Table rows */
-    .stDataFrame tbody tr td {
-        padding: 10px 12px !important;
-        font-size: 13px !important;
-        color: #1F2937 !important;
+    .metric-value {
+        color: #111827;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 4px;
     }
     
-    /* Alternate row colors */
-    .stDataFrame tbody tr:nth-child(even) {
-        background-color: #F9FAFB;
+    .metric-delta {
+        font-size: 12px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 2px;
     }
     
-    /* Expander */
-    .streamlit-expanderHeader {
-        background-color: #F9FAFB;
-        border-radius: 8px;
-        font-weight: 600;
+    .delta-pos { color: #10B981; }
+    .delta-neg { color: #EF4444; }
+    
+    /* Top Navigation Bar (Mock) */
+    .nav-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        padding-top: 10px;
     }
     
-    /* Remove top padding from plotly charts */
-    .js-plotly-plot {
-        margin-top: 0 !important;
-    }
-    
-    /* Success/Warning/Info boxes */
-    .stSuccess, .stWarning, .stInfo {
-        border-radius: 8px;
-        font-size: 13px;
-    }
-    
-    /* Reduce spacing between columns */
-    [data-testid="column"] {
-        padding: 0 0.5rem;
-    }
-    
-    /* Right sidebar styling */
-    [data-testid="column"]:last-child {
-        border-left: 1px solid #E5E7EB;
-        padding-left: 1.5rem;
+    .nav-item {
+        background-color: #2D2B55;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -275,7 +263,16 @@ def generate_sparkline_data():
 
 def render_executive_summary(conn):
     """Render Executive Summary dashboard"""
-    st.title("📊 Executive Summary")
+    # Top Navigation Bar (Mock)
+    st.markdown("""
+    <div class="nav-bar">
+        <div class="nav-item">Data Source ▾</div>
+        <div class="nav-item">Channel ▾</div>
+        <div class="nav-item">Campaign ▾</div>
+        <div class="nav-item">Ad Set ▾</div>
+        <div class="nav-item">Jan 1, 2023 - Mar 31, 2023 ▾</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Load data
     kpi_data = load_kpi_data(conn)
@@ -299,105 +296,47 @@ def render_executive_summary(conn):
     
     with center_col:
         # ============= TOP: KPI CARDS (2 rows x 4 columns) =============
+        # Row 1
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             kpi = kpis.get('spend', {})
-            create_kpi_card(
-                "Spend", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
-        
+            create_kpi_card("Spend", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         with col2:
             kpi = kpis.get('cpm', {})
-            create_kpi_card(
-                "CPM", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
-        
+            create_kpi_card("CPM", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         with col3:
             kpi = kpis.get('ctr', {})
-            create_kpi_card(
-                "CTR", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
-        
+            create_kpi_card("CTR", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         with col4:
             kpi = kpis.get('cpc', {})
-            create_kpi_card(
-                "CPC", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
+            create_kpi_card("CPC", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         
-        # Second row of KPIs
+        # Row 2
         col5, col6, col7, col8 = st.columns(4)
         
         with col5:
             kpi = kpis.get('video_views', {})
-            create_kpi_card(
-                "Video Views", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
-        
+            create_kpi_card("Video Views", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         with col6:
             kpi = kpis.get('impressions', {})
-            create_kpi_card(
-                "Impressions", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
-        
+            create_kpi_card("Impressions", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         with col7:
             kpi = kpis.get('conversions', {})
-            create_kpi_card(
-                "Conversions", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
-        
+            create_kpi_card("Conversions", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         with col8:
             kpi = kpis.get('conversion_rate', {})
-            create_kpi_card(
-                "Conversion Rate", 
-                kpi.get('value', 0), 
-                kpi.get('unit', ''), 
-                kpi.get('change', 0), 
-                kpi.get('change_unit', ''),
-                sparkline_data=generate_sparkline_data()
-            )
+            create_kpi_card("Conversion Rate", kpi.get('value', 0), kpi.get('unit', ''), kpi.get('change', 0), kpi.get('change_unit', ''), sparkline_data=generate_sparkline_data())
         
         st.markdown("<br>", unsafe_allow_html=True)
         
         # ============= CENTER: TIME SERIES CHART =============
+        # Wrap chart in a card container
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         time_series = load_time_series(conn)
         if not time_series.empty:
             create_time_series_chart(time_series)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -521,13 +460,8 @@ def main():
     
     # Sidebar
     with st.sidebar:
-        st.markdown("""
-        <div style='text-align: center; padding: 20px 0;'>
-            <svg width="120" height="30" viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <text x="0" y="20" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#6E4AE7">improvado</text>
-            </svg>
-        </div>
-        """, unsafe_allow_html=True)
+        # Logo
+        st.image("img/improvado_logo.png", width=160)
         
         st.markdown("### Navigation")
         

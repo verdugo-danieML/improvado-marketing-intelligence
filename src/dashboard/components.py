@@ -16,14 +16,18 @@ COLORS = {
     'warning': '#F59E0B',      # Amber
     'danger': '#EF4444',       # Red
     'neutral': '#6B7280',      # Gray
-    'background': '#F9FAFB',   # Light gray
-    'border': '#E5E7EB'        # Border gray
+    'background': '#F3F4F6',   # Light gray
+    'border': '#E5E7EB',       # Border gray
+    'text': '#111827',         # Dark text
+    'text_secondary': '#6B7280' # Secondary text
 }
 
 def create_kpi_card(title, value, unit, change, change_unit, sparkline_data=None):
     """
     Create a KPI card with metric, change indicator, and sparkline (Improvado style)
+    Uses custom HTML/CSS for exact styling control
     """
+    # Format value
     if unit:
         if title in ["Spend", "CPM", "CPC"]:
             display_value = f"${value}{unit}"
@@ -32,47 +36,64 @@ def create_kpi_card(title, value, unit, change, change_unit, sparkline_data=None
     else:
         display_value = str(value)
     
+    # Format change
     if change_unit:
         delta_text = f"{change:+.1f}{change_unit}" if isinstance(change, (int, float)) else f"{change}{change_unit}"
     else:
         delta_text = f"{change:+.1f}" if isinstance(change, (int, float)) else str(change)
     
-    delta_color = "normal" if change >= 0 else "inverse"
+    # Determine color and icon
+    is_positive = change >= 0
+    delta_class = "delta-pos" if is_positive else "delta-neg"
+    delta_icon = "↑" if is_positive else "↓"
     
-    st.metric(
-        label=title,
-        value=display_value,
-        delta=delta_text,
-        delta_color=delta_color
-    )
-    
+    # Generate sparkline plot
+    sparkline_html = ""
     if sparkline_data and len(sparkline_data) > 0:
         fig = go.Figure()
         
-        line_color = COLORS['primary'] if change >= 0 else COLORS['danger']
-        fill_color = "rgba(110, 74, 231, 0.1)" if change >= 0 else "rgba(239, 68, 68, 0.1)"
+        line_color = COLORS['primary'] if is_positive else COLORS['danger']
+        fill_color = "rgba(110, 74, 231, 0.1)" if is_positive else "rgba(239, 68, 68, 0.1)"
         
         fig.add_trace(go.Scatter(
             y=sparkline_data,
             mode='lines',
-            line=dict(color=line_color, width=1.5),
+            line=dict(color=line_color, width=2),
             fill='tozeroy',
             fillcolor=fill_color,
             hovertemplate='%{y:.2f}<extra></extra>'
         ))
         
         fig.update_layout(
-            height=60,
-            margin=dict(l=0, r=0, t=5, b=0),
+            height=50,
+            margin=dict(l=0, r=0, t=0, b=0),
             xaxis=dict(visible=False, showgrid=False),
             yaxis=dict(visible=False, showgrid=False),
             showlegend=False,
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            hovermode='x'
+            hovermode=False
         )
         
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        # We can't easily embed the plotly chart in the HTML string, 
+        # so we'll render the card in two parts: HTML header + Plotly chart
+    
+    # Render the card container start
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">{title}</div>
+        <div class="metric-value">{display_value}</div>
+        <div class="metric-delta {delta_class}">
+            {delta_icon} {delta_text}
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Render sparkline if available
+    if sparkline_data and len(sparkline_data) > 0:
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'staticPlot': True})
+    
+    # Close container
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def create_time_series_chart(df, title="Channel Performance Over Time"):
     """Create multi-line time series chart (Improvado style)"""
@@ -102,7 +123,7 @@ def create_time_series_chart(df, title="Channel Performance Over Time"):
     fig.update_layout(
         title=dict(
             text=title,
-            font=dict(size=16, color='#1F2937', family='Arial, sans-serif'),
+            font=dict(size=14, color='#6B7280', family='Inter, sans-serif'),
             x=0,
             xanchor='left'
         ),
@@ -115,13 +136,14 @@ def create_time_series_chart(df, title="Channel Performance Over Time"):
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=12)
+            font=dict(size=12, family='Inter, sans-serif'),
+            bgcolor='rgba(0,0,0,0)'
         ),
-        height=350,
-        margin=dict(l=60, r=40, t=60, b=40),
+        height=550,
+        margin=dict(l=40, r=20, t=40, b=40),
         paper_bgcolor='white',
         plot_bgcolor='white',
-        font=dict(family='Arial, sans-serif')
+        font=dict(family='Inter, sans-serif')
     )
     
     fig.update_xaxes(
@@ -130,13 +152,15 @@ def create_time_series_chart(df, title="Channel Performance Over Time"):
         gridcolor='#F3F4F6',
         showline=True,
         linewidth=1,
-        linecolor='#E5E7EB'
+        linecolor='#E5E7EB',
+        tickfont=dict(color='#9CA3AF', size=11)
     )
     fig.update_yaxes(
         showgrid=True, 
         gridwidth=1, 
         gridcolor='#F3F4F6',
-        showline=False
+        showline=False,
+        tickfont=dict(color='#9CA3AF', size=11)
     )
     
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -144,11 +168,13 @@ def create_time_series_chart(df, title="Channel Performance Over Time"):
 def create_channel_performance_table(df):
     """Create Channel Performance table (Improvado style)"""
     st.markdown("""
-    <div style='background-color: white; padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB;'>
-        <h3 style='color: #1F2937; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;'>
-            📺 Channel Performance
-        </h3>
-    </div>
+    <div class="css-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style='color: #4B5563; font-size: 14px; font-weight: 600; margin: 0;'>
+                📺 Channel Performance
+            </h3>
+            <div style="color: #9CA3AF; cursor: pointer;">⋮</div>
+        </div>
     """, unsafe_allow_html=True)
     
     display_df = df[['channel', 'impressions', 'spend_pct', 'ctr']].copy()
@@ -169,13 +195,15 @@ def create_channel_performance_table(df):
             "CTR": st.column_config.TextColumn("CTR", width="small"),
         }
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def create_data_source_table(df):
     """Create Data Source Performance table (Improvado style)"""
     st.markdown("""
-    <h3 style='color: #1F2937; font-size: 16px; font-weight: 600; margin: 0 0 16px 0;'>
-        📊 Data Source Performance
-    </h3>
+    <div class="css-card">
+        <h3 style='color: #4B5563; font-size: 14px; font-weight: 600; margin: 0 0 16px 0;'>
+            📊 Data Source Performance
+        </h3>
     """, unsafe_allow_html=True)
     
     display_df = df[['source', 'impressions', 'spend_pct', 'ctr', 'conversions_pct']].copy()
@@ -187,13 +215,15 @@ def create_data_source_table(df):
     display_df['% Δ '] = display_df['% Δ '].apply(lambda x: f"{x:+.1f}%" if pd.notna(x) else "-")
     
     st.dataframe(display_df, use_container_width=True, hide_index=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def create_campaign_table(df):
     """Create Campaign Performance table (Improvado style)"""
     st.markdown("""
-    <h3 style='color: #1F2937; font-size: 16px; font-weight: 600; margin: 0 0 16px 0;'>
-        🎯 Campaign Performance
-    </h3>
+    <div class="css-card">
+        <h3 style='color: #4B5563; font-size: 14px; font-weight: 600; margin: 0 0 16px 0;'>
+            🎯 Campaign Performance
+        </h3>
     """, unsafe_allow_html=True)
     
     display_df = df[['campaign', 'impressions', 'ctr']].copy()
@@ -203,15 +233,18 @@ def create_campaign_table(df):
     display_df['CTR'] = display_df['CTR'].apply(lambda x: f"{x:.2f}%")
     
     st.dataframe(display_df, use_container_width=True, hide_index=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def create_data_source_table_compact(df):
     """Create compact Data Source Performance table for right sidebar"""
     st.markdown("""
-    <div style='background-color: white; padding: 12px; border-radius: 8px; border: 1px solid #E5E7EB;'>
-        <h3 style='color: #1F2937; font-size: 13px; font-weight: 600; margin: 0 0 10px 0;'>
-            📊 Data Source Performance
-        </h3>
-    </div>
+    <div class="css-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style='color: #4B5563; font-size: 13px; font-weight: 600; margin: 0;'>
+                📊 Data Source Performance
+            </h3>
+            <div style="color: #9CA3AF; cursor: pointer;">⋮</div>
+        </div>
     """, unsafe_allow_html=True)
     
     # Show only top 5 sources with key metrics
@@ -228,15 +261,18 @@ def create_data_source_table_compact(df):
         hide_index=True,
         height=200
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def create_campaign_table_compact(df):
     """Create compact Campaign Performance table for right sidebar"""
     st.markdown("""
-    <div style='background-color: white; padding: 12px; border-radius: 8px; border: 1px solid #E5E7EB;'>
-        <h3 style='color: #1F2937; font-size: 13px; font-weight: 600; margin: 0 0 10px 0;'>
-            🎯 Campaign Performance
-        </h3>
-    </div>
+    <div class="css-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style='color: #4B5563; font-size: 13px; font-weight: 600; margin: 0;'>
+                🎯 Campaign Performance
+            </h3>
+            <div style="color: #9CA3AF; cursor: pointer;">⋮</div>
+        </div>
     """, unsafe_allow_html=True)
     
     # Show only top 5 campaigns with key metrics
@@ -253,6 +289,7 @@ def create_campaign_table_compact(df):
         hide_index=True,
         height=200
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def create_sentiment_distribution_chart(df):
     """Create sentiment distribution pie chart (Improvado style)"""
