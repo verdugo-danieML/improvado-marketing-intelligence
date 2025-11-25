@@ -35,73 +35,49 @@ class SQLiteLoader:
         """Create database schema for Reddit data"""
         cursor = self.conn.cursor()
         
-        # Create reddit_processed table
+        # Create youtube_processed table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS reddit_processed (
-                post_id TEXT PRIMARY KEY,
-                subreddit TEXT,
-                title TEXT,
-                body TEXT,
-                title_clean TEXT,
-                body_clean TEXT,
-                full_text TEXT,
+            CREATE TABLE IF NOT EXISTS youtube_processed (
+                id TEXT PRIMARY KEY,
+                video_id TEXT,
+                video_title TEXT,
+                video_channel TEXT,
+                brand TEXT,
+                text TEXT,
                 author TEXT,
                 timestamp DATETIME,
                 score INTEGER,
-                upvote_ratio REAL,
                 num_comments INTEGER,
                 sentiment_label TEXT,
                 sentiment_score REAL,
-                topic TEXT,
-                hour INTEGER,
-                day_of_week INTEGER,
-                day_name TEXT,
-                comment_ratio REAL,
                 engagement_score REAL,
-                title_length INTEGER,
-                body_length INTEGER,
+                source TEXT,
+                url TEXT,
                 extracted_date DATE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         
-        # Create reddit_raw table (backup)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS reddit_raw (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                post_id TEXT,
-                subreddit TEXT,
-                title TEXT,
-                body TEXT,
-                author TEXT,
-                score INTEGER,
-                num_comments INTEGER,
-                created_utc DATETIME,
-                url TEXT,
-                extracted_at DATETIME,
-                raw_data TEXT
-            )
-        """)
         
         self.conn.commit()
         logger.info("✓ Database schema created")
     
-    def load_processed_data(self, csv_path='data/processed_reddit_data.csv'):
-        """Load processed data from CSV"""
+    def load_processed_data(self, json_path='data/youtube_processed.json'):
+        """Load processed data from JSON"""
         try:
-            if not Path(csv_path).exists():
-                logger.error(f"Processed data file not found: {csv_path}")
-                return False
+            if not Path(json_path).exists():
+                logger.error(f"Processed data file not found: {json_path}")
+                return None
             
-            df = pd.read_csv(csv_path)
-            logger.info(f"Loaded {len(df)} records from {csv_path}")
+            df = pd.read_json(json_path)
+            logger.info(f"Loaded {len(df)} records from {json_path}")
             
             return df
         except Exception as e:
             logger.error(f"Error loading processed data: {e}")
             return None
     
-    def load_sentiment_data(self, csv_path='data/sentiment_results.csv'):
+    def load_sentiment_data(self, csv_path='data/youtube_sentiment.csv'):
         """Load sentiment analysis results"""
         try:
             if not Path(csv_path).exists():
@@ -119,10 +95,10 @@ class SQLiteLoader:
     def merge_data(self, processed_df, sentiment_df):
         """Merge processed data with sentiment results"""
         if sentiment_df is not None:
-            # Merge on post_id
+            # Merge on id
             merged = processed_df.merge(
-                sentiment_df[['post_id', 'sentiment_label', 'sentiment_score']], 
-                on='post_id', 
+                sentiment_df[['id', 'sentiment_label', 'sentiment_score']], 
+                on='id', 
                 how='left'
             )
             logger.info("✓ Merged sentiment data with processed data")
@@ -148,13 +124,10 @@ class SQLiteLoader:
             
             # Select only columns that exist in schema
             columns_to_insert = [
-                'post_id', 'subreddit', 'title', 'body', 
-                'title_clean', 'body_clean', 'full_text',
-                'author', 'timestamp', 'score', 'upvote_ratio', 'num_comments',
-                'sentiment_label', 'sentiment_score', 
-                'hour', 'day_of_week', 'day_name',
-                'comment_ratio', 'engagement_score',
-                'title_length', 'body_length', 'extracted_date'
+                'id', 'video_id', 'video_title', 'video_channel', 'brand',
+                'text', 'author', 'timestamp', 'score', 'num_comments',
+                'sentiment_label', 'sentiment_score', 'engagement_score',
+                'source', 'url', 'extracted_date'
             ]
             
             # Keep only columns that exist in dataframe
@@ -162,13 +135,13 @@ class SQLiteLoader:
             df_final = df_insert[available_columns]
             
             # Insert to database (replace if exists)
-            df_final.to_sql('reddit_processed', self.conn, if_exists='replace', index=False)
+            df_final.to_sql('youtube_processed', self.conn, if_exists='replace', index=False)
             
-            logger.success(f"✅ Inserted {len(df_final)} records to reddit_processed table")
+            logger.success(f"✅ Inserted {len(df_final)} records to youtube_processed table")
             
             # Show summary
             cursor = self.conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM reddit_processed")
+            cursor.execute("SELECT COUNT(*) FROM youtube_processed")
             count = cursor.fetchone()[0]
             logger.info(f"  Total records in database: {count}")
             
@@ -191,11 +164,11 @@ class SQLiteLoader:
             cursor = self.conn.cursor()
             
             # Check record count
-            cursor.execute("SELECT COUNT(*) FROM reddit_processed")
+            cursor.execute("SELECT COUNT(*) FROM youtube_processed")
             count = cursor.fetchone()[0]
             
             # Check sample records
-            cursor.execute("SELECT post_id, subreddit, sentiment_label FROM reddit_processed LIMIT 5")
+            cursor.execute("SELECT id, brand, sentiment_label FROM youtube_processed LIMIT 5")
             samples = cursor.fetchall()
             
             logger.info("\n📊 Data Verification:")

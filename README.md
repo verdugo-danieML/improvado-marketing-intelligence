@@ -1,11 +1,11 @@
 # 🚀 Improvado Marketing Intelligence PoC
 
-A production-ready data engineering and machine learning proof of concept demonstrating advanced marketing analytics capabilities using Reddit data, NLP sentiment analysis, and interactive dashboards.
+A production-ready data engineering and machine learning proof of concept demonstrating advanced marketing analytics capabilities using YouTube data, NLP sentiment analysis, and interactive dashboards.
 
 ## 🎯 Project Overview
 
 This PoC showcases:
-- **Data Engineering**: Reddit API → MongoDB (Data Lake) → SQLite (Data Warehouse)
+- **Data Engineering**: YouTube API → JSON (Raw) → SQLite (Data Warehouse)
 - **Machine Learning**: Sentiment analysis using HuggingFace Transformers
 - **Business Intelligence**: Interactive Streamlit dashboard with real-time KPIs
 - **Production-Ready Code**: Error handling, logging, modular architecture
@@ -20,8 +20,7 @@ This PoC showcases:
 - Interactive time-series visualizations
 
 ### AI Customer Voice Analysis
-- Sentiment analysis of marketing discussions on Reddit
-- Topic modeling for trend identification
+- Sentiment analysis of YouTube comments
 - Engagement vs sentiment correlation analysis
 - Critical alerts for negative sentiment spikes
 
@@ -33,18 +32,23 @@ git clone https://github.com/verdugo-danieML/improvado-marketing-intelligence.gi
 cd improvado-marketing-intelligence
 
 # Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Generate demo data
-python src/etl/generate_kpi_data.py
+# Configure Environment
+cp .env.example .env
+# Edit .env and add your YOUTUBE_API_KEY
+
+# Run the full pipeline
+./run_pipeline.sh
 
 # Launch dashboard
 streamlit run app.py
 ```
+
 ## 📁 Project Structure
 ```
 improvado-marketing-intelligence/
@@ -55,7 +59,6 @@ improvado-marketing-intelligence/
 ├── README.md
 ├── config.py
 ├── app.py
-├── setup.sh
 ├── run_pipeline.sh
 │
 ├── src/
@@ -63,8 +66,8 @@ improvado-marketing-intelligence/
 │   ├── etl/
 │   │   ├── __init__.py
 │   │   ├── generate_kpi_data.py
-│   │   ├── extract_reddit.py
-│   │   ├── process_data.py
+│   │   ├── extract_youtube.py
+│   │   ├── process_youtube_data.py
 │   │   └── load_to_sqlite.py
 │   ├── ml/
 │   │   ├── __init__.py
@@ -80,11 +83,11 @@ improvado-marketing-intelligence/
 
 ## 🔑 Key Technologies
 * Frontend: Streamlit 1.31
-* Databases: MongoDB (Raw), SQLite (Curated)
+* Databases: SQLite
 * ML/NLP: HuggingFace Transformers (DistilBERT)
 * Data Processing: Pandas, NumPy
 * Visualization: Plotly, Altair
-* API: PRAW (Reddit API wrapper)
+* API: Google API Client (YouTube Data API v3)
 
 ## 📈 Business Value
 * Real-time customer sentiment monitoring for proactive strategy adjustments

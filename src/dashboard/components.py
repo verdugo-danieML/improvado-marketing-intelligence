@@ -243,8 +243,14 @@ def create_data_source_table_compact(df):
             st.session_state.selected_chart = 'source'
             st.rerun()
     
-    # Show only top 5 sources with key metrics
-    display_df = df.head(5)[['source', 'impressions', 'ctr']].copy()
+    # Group by source to get unique entries and aggregate metrics
+    grouped_df = df.groupby('source', as_index=False).agg({
+        'impressions': 'mean',
+        'ctr': 'mean'
+    })
+    
+    # Show all unique sources with key metrics
+    display_df = grouped_df[['source', 'impressions', 'ctr']].copy()
     display_df.columns = ['Source', 'Impr.', 'CTR']
     
     # Format values (more compact)
@@ -255,7 +261,7 @@ def create_data_source_table_compact(df):
         display_df,
         use_container_width=True,
         hide_index=True,
-        height=200
+        height=300
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -271,8 +277,14 @@ def create_campaign_table_compact(df):
             st.session_state.selected_chart = 'campaign'
             st.rerun()
     
-    # Show only top 5 campaigns with key metrics
-    display_df = df.head(5)[['campaign', 'impressions', 'ctr']].copy()
+    # Group by campaign to get unique entries and aggregate metrics
+    grouped_df = df.groupby('campaign', as_index=False).agg({
+        'impressions': 'mean',
+        'ctr': 'mean'
+    })
+    
+    # Show all unique campaigns with key metrics
+    display_df = grouped_df[['campaign', 'impressions', 'ctr']].copy()
     display_df.columns = ['Campaign', 'Impr.', 'CTR']
     
     # Format values (more compact)
@@ -283,7 +295,7 @@ def create_campaign_table_compact(df):
         display_df,
         use_container_width=True,
         hide_index=True,
-        height=200
+        height=300
     )
     st.markdown("</div>", unsafe_allow_html=True)
 

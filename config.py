@@ -19,24 +19,6 @@ SRC_DIR = PROJECT_ROOT / "src"
 # Ensure data directory exists
 DATA_DIR.mkdir(exist_ok=True)
 
-# Reddit API Configuration
-REDDIT_CONFIG = {
-    "client_id": os.getenv("REDDIT_CLIENT_ID", ""),
-    "client_secret": os.getenv("REDDIT_CLIENT_SECRET", ""),
-    "user_agent": os.getenv("REDDIT_USER_AGENT", "Improvado PoC v1.0"),
-}
-
-# MongoDB Configuration
-MONGO_CONFIG = {
-    "uri": os.getenv("MONGO_URI", "mongodb://localhost:27017/"),
-    "db_name": os.getenv("MONGO_DB_NAME", "improvado_poc"),
-    "collections": {
-        "reddit_raw": "reddit_raw",
-        "metadata": "metadata",
-    },
-    "timeout": 2000,  # milliseconds
-}
-
 # SQLite Configuration
 SQLITE_CONFIG = {
     "db_path": os.getenv("SQLITE_DB_PATH", str(DATA_DIR / "improvado_data.db")),
@@ -46,25 +28,6 @@ SQLITE_CONFIG = {
 APP_CONFIG = {
     "log_level": os.getenv("LOG_LEVEL", "INFO"),
     "batch_size": int(os.getenv("BATCH_SIZE", "32")),
-    "max_reddit_posts": int(os.getenv("MAX_REDDIT_POSTS", "200")),
-}
-
-# Reddit Data Collection Settings
-REDDIT_SOURCES = {
-    "subreddits": [
-        "marketing",
-        "digital_marketing",
-        "PPC",
-        "analytics",
-        "dataengineering",
-    ],
-    "search_terms": [
-        "data integration",
-        "marketing analytics",
-        "attribution modeling",
-        "marketing ROI",
-        "customer insights",
-    ],
 }
 
 # ML Model Configuration
@@ -111,11 +74,8 @@ def validate_config():
     """Validate that critical configurations are set"""
     warnings = []
     
-    if not REDDIT_CONFIG["client_id"]:
-        warnings.append("⚠️  Reddit Client ID not set in .env")
-    
-    if not REDDIT_CONFIG["client_secret"]:
-        warnings.append("⚠️  Reddit Client Secret not set in .env")
+    if not os.getenv("YOUTUBE_API_KEY"):
+        warnings.append("⚠️  YOUTUBE_API_KEY not set in .env")
     
     if warnings:
         logger.warning("Configuration warnings:")

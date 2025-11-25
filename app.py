@@ -247,10 +247,10 @@ def load_time_series(_conn):
         return pd.DataFrame()
 
 @st.cache_data
-def load_reddit_data(_conn):
-    """Load processed Reddit data"""
+def load_youtube_data(_conn):
+    """Load YouTube comments data"""
     try:
-        query = "SELECT * FROM reddit_processed"
+        query = "SELECT * FROM youtube_processed ORDER BY timestamp DESC"
         df = pd.read_sql_query(query, _conn)
         return df
     except Exception:
@@ -295,8 +295,8 @@ def render_executive_summary(conn):
             'change_unit': row['change_unit']
         }
     
-    # Main Layout: Center content (70%) + Right sidebar (30%)
-    center_col, right_sidebar = st.columns([7, 3])
+    # Main Layout: Center content (65%) + Right sidebar (35%)
+    center_col, right_sidebar = st.columns([6.5, 3.5])
     
     with center_col:
         # ============= TOP: KPI CARDS (2 rows x 4 columns) =============
@@ -347,15 +347,13 @@ def render_executive_summary(conn):
         elif selected_chart == 'source':
             data_sources = load_data_source_performance(conn)
             if not data_sources.empty:
-                create_time_series_chart(data_sources, group_col='source', value_col='impressions', title="Data Source Performance (Impressions)")
+                create_time_series_chart(data_sources, group_col='source', value_col='impressions', title="Data Source Performance")
         elif selected_chart == 'campaign':
             campaigns = load_campaign_performance(conn)
             if not campaigns.empty:
-                create_time_series_chart(campaigns, group_col='campaign', value_col='impressions', title="Campaign Performance (Impressions)")
+                create_time_series_chart(campaigns, group_col='campaign', value_col='impressions', title="Campaign Performance")
                 
         st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
 
         # Load data for sidebar usage (tables removed from center view)
         data_sources = load_data_source_performance(conn)
@@ -369,108 +367,62 @@ def render_executive_summary(conn):
         if not channels.empty:
             create_channel_performance_table(channels)
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        
         # Data Source Performance (compact version for sidebar)
         if not data_sources.empty:
             create_data_source_table_compact(data_sources)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
         
         # Campaign Performance (compact version for sidebar)
         if not campaigns.empty:
             create_campaign_table_compact(campaigns)
 
 def render_ai_customer_voice(conn):
-    """Render AI Customer Voice dashboard"""
-    st.title("🤖 AI Customer Voice Analysis")
+    """Render AI Customer Voice section"""
+    st.markdown('<div class="sub-header" style="margin-top: 30px;">AI Customer Voice (YouTube)</div>', unsafe_allow_html=True)
     
-    st.markdown("""
-    <div style='background-color: #F3F4F6; padding: 15px; border-radius: 8px; margin-bottom: 20px;'>
-    <p style='margin: 0; color: #4B5563; font-size: 14px;'>
-    <strong>Real-time Customer Sentiment Monitoring</strong><br>
-    Enables proactive marketing strategy adjustments, potentially improving campaign ROI by 15-25%
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
+    df = load_youtube_data(conn)
     
-    # Load Reddit data
-    reddit_data = load_reddit_data(conn)
-    
-    if reddit_data.empty:
-        st.info("""
-        **No customer voice data available yet.**
-        
-        To populate this dashboard:
-        1. Configure Reddit API credentials in `.env`
-        2. Run: `python src/etl/extract_reddit.py`
-        3. Run: `python src/etl/process_data.py`
-        4. Run: `python src/ml/sentiment_analysis.py`
-        5. Run: `python src/etl/load_to_sqlite.py`
-        
-        Or use demo mode with sample data.
-        """)
+    if df.empty:
+        st.info("No YouTube data available. Run the ETL pipeline to collect data.")
         return
-    
-    # Check if sentiment analysis is available
-    if 'sentiment_label' not in reddit_data.columns:
-        st.warning("Sentiment analysis not yet performed. Run: `python src/ml/sentiment_analysis.py`")
-        return
-    
-    # Metrics row
-    col1, col2, col3, col4 = st.columns(4)
+
+    col1, col2 = st.columns([1, 2])
     
     with col1:
-        total_posts = len(reddit_data)
-        st.metric("Total Posts Analyzed", f"{total_posts:,}")
-    
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
+        st.markdown("### Sentiment Distribution")
+        create_sentiment_distribution_chart(df)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     with col2:
-        positive_pct = (reddit_data['sentiment_label'] == 'POSITIVE').sum() / total_posts * 100
-        st.metric("Positive Sentiment", f"{positive_pct:.1f}%", delta=f"+{positive_pct:.1f}%")
-    
-    with col3:
-        negative_pct = (reddit_data['sentiment_label'] == 'NEGATIVE').sum() / total_posts * 100
-        st.metric("Negative Sentiment", f"{negative_pct:.1f}%", 
-                 delta=f"{negative_pct:.1f}%", delta_color="inverse")
-    
-    with col4:
-        avg_engagement = reddit_data['score'].mean()
-        st.metric("Avg Engagement Score", f"{avg_engagement:.1f}")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Charts
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        create_sentiment_distribution_chart(reddit_data)
-    
-    with col2:
-        if 'timestamp' in reddit_data.columns:
-            create_sentiment_timeline(reddit_data)
-    
-    # Subreddit analysis
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        create_subreddit_sentiment_heatmap(reddit_data)
-    
-    with col2:
-        if 'engagement_score' in reddit_data.columns:
-            create_engagement_sentiment_scatter(reddit_data)
-    
-    # Topic distribution
-    if 'topic_label' in reddit_data.columns:
-        create_topic_distribution(reddit_data)
-    
-    # Critical alerts
-    display_critical_alerts(reddit_data)
-    
-    # Data table
-    with st.expander("📋 View Raw Data"):
-        display_cols = ['subreddit', 'title', 'score', 'sentiment_label', 'sentiment_score']
-        available_cols = [col for col in display_cols if col in reddit_data.columns]
-        st.dataframe(reddit_data[available_cols].head(50), use_container_width=True, hide_index=True)
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
+        st.markdown("### Recent Comments")
+        
+        for _, row in df.head(5).iterrows():
+            sentiment_color = {
+                'POSITIVE': '#10B981',
+                'NEGATIVE': '#EF4444',
+                'NEUTRAL': '#6B7280'
+            }.get(row.get('sentiment_label', 'NEUTRAL'), '#6B7280')
+            
+            st.markdown(f"""
+            <div style="padding: 10px; border-bottom: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-weight: 600; color: #1F2937;">{row.get('author', 'Unknown')}</span>
+                    <span style="background-color: {sentiment_color}20; color: {sentiment_color}; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+                        {row.get('sentiment_label', 'NEUTRAL')}
+                    </span>
+                </div>
+                <div style="font-size: 12px; color: #6B7280; margin-bottom: 5px;">
+                    on <b>{row.get('video_title', 'Unknown Video')}</b> ({row.get('video_channel', 'Unknown Channel')})
+                </div>
+                <div style="color: #4B5563; font-size: 14px;">{row.get('text', '')}</div>
+                <div style="font-size: 12px; color: #9CA3AF; margin-top: 5px;">
+                    👍 {row.get('score', 0)} • 💬 {row.get('num_comments', 0)} replies
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def main():
     """Main application"""

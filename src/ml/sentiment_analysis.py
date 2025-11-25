@@ -47,14 +47,14 @@ class SentimentAnalyzer:
             logger.error(f"Failed to load model: {e}")
             return False
     
-    def load_data(self, csv_path='data/processed_reddit_data.csv'):
+    def load_data(self, json_path='data/youtube_processed.json'):
         """Load processed data"""
         try:
-            if not Path(csv_path).exists():
-                logger.error(f"Data file not found: {csv_path}")
+            if not Path(json_path).exists():
+                logger.error(f"Data file not found: {json_path}")
                 return None
             
-            df = pd.read_csv(csv_path)
+            df = pd.read_json(json_path)
             logger.info(f"Loaded {len(df)} records for sentiment analysis")
             
             return df
@@ -137,7 +137,7 @@ class SentimentAnalyzer:
             return 'NEUTRAL'
         return label
     
-    def save_results(self, df, output_path='data/sentiment_results.csv'):
+    def save_results(self, df, output_path='data/youtube_sentiment.csv'):
         """Save sentiment analysis results"""
         try:
             output_path = Path(output_path)
@@ -178,11 +178,11 @@ class SentimentAnalyzer:
         for _, row in top_positive.iterrows():
             logger.info(f"    • {row['title'][:60]}... ({row['sentiment_score']:.3f})")
         
-        # Sentiment by subreddit
-        if 'subreddit' in df.columns:
-            sentiment_by_sub = df.groupby('subreddit')['sentiment_label'].value_counts().unstack(fill_value=0)
-            logger.info("\n  Sentiment by Subreddit:")
-            logger.info(f"\n{sentiment_by_sub}")
+        # Sentiment by brand
+        if 'brand' in df.columns:
+            sentiment_by_brand = df.groupby('brand')['sentiment_label'].value_counts().unstack(fill_value=0)
+            logger.info("\n  Sentiment by Brand:")
+            logger.info(f"\n{sentiment_by_brand}")
     
     def analyze(self):
         """Main analysis workflow"""
@@ -198,10 +198,11 @@ class SentimentAnalyzer:
             return False
         
         # Prepare texts for analysis
-        # Use full_text if available, otherwise combine title and body
-        if 'full_text' in df.columns:
-            texts = df['full_text'].fillna('').tolist()
+        # YouTube data has 'text' column
+        if 'text' in df.columns:
+            texts = df['text'].fillna('').tolist()
         else:
+            logger.warning("'text' column not found, falling back to title + body")
             texts = (df['title'].fillna('') + ' ' + df['body'].fillna('')).tolist()
         
         logger.info(f"Analyzing {len(texts)} texts...")
