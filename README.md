@@ -95,5 +95,9 @@ improvado-marketing-intelligence/
 * Data-driven marketing decisions with ML-powered insights
 * ROI improvement potential of 15-25% through early trend detection
 
+## 📚 Documentation
+* [User Guide](docs/USER_GUIDE.md) - Detailed instructions on using the dashboard.
+* [Video Script](docs/VIDEO_SCRIPT.md) - Walkthrough script for the demo video.
+
 ## 📄 License
 MIT License - See LICENSE file for details
