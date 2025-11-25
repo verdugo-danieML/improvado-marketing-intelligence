@@ -385,19 +385,50 @@ def render_ai_customer_voice(conn):
         st.info("No YouTube data available. Run the ETL pipeline to collect data.")
         return
 
+    # --- Filters ---
+    st.markdown('<div style="margin-bottom: 20px;">', unsafe_allow_html=True)
+    filter_col1, filter_col2 = st.columns([1, 1])
+    
+    with filter_col1:
+        # Brand Filter
+        brands = ['All'] + sorted(df['brand'].unique().tolist())
+        selected_brand = st.selectbox("Select Brand", brands, index=0)
+    
+    with filter_col2:
+        # Sentiment Filter (for comments list)
+        sentiments = ['POSITIVE', 'NEGATIVE', 'NEUTRAL']
+        selected_sentiments = st.multiselect("Filter Comments by Sentiment", sentiments, default=sentiments)
+        
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Apply Filters
+    # 1. Brand Filter applies to EVERYTHING (Charts + Comments)
+    if selected_brand != 'All':
+        df_filtered = df[df['brand'] == selected_brand]
+    else:
+        df_filtered = df
+        
+    # 2. Sentiment Filter applies ONLY to the Comments List
+    if selected_sentiments:
+        df_comments = df_filtered[df_filtered['sentiment_label'].isin(selected_sentiments)]
+    else:
+        df_comments = df_filtered
+
     col1, col2 = st.columns([1, 2])
     
     with col1:
         st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.markdown("### Sentiment Distribution")
-        create_sentiment_distribution_chart(df)
+        # Chart uses Brand-filtered data (shows distribution for that brand)
+        create_sentiment_distribution_chart(df_filtered)
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col2:
         st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.markdown("### Recent Comments")
         
-        for _, row in df.head(5).iterrows():
+        # Comments list uses Brand AND Sentiment filtered data
+        for _, row in df_comments.head(5).iterrows():
             sentiment_color = {
                 'POSITIVE': '#10B981',
                 'NEGATIVE': '#EF4444',

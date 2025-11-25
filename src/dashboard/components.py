@@ -303,11 +303,18 @@ def create_sentiment_distribution_chart(df):
     """Create sentiment distribution pie chart (Improvado style)"""
     sentiment_counts = df['sentiment_label'].value_counts()
     
+    # Define color map
+    color_map = {
+        'POSITIVE': COLORS['success'],
+        'NEGATIVE': COLORS['danger'],
+        'NEUTRAL': COLORS['neutral']
+    }
+    
     fig = go.Figure(data=[go.Pie(
         labels=sentiment_counts.index,
         values=sentiment_counts.values,
         hole=0.5,
-        marker=dict(colors=[COLORS['success'], COLORS['danger'], COLORS['neutral']]),
+        marker=dict(colors=[color_map.get(label, COLORS['neutral']) for label in sentiment_counts.index]),
         textinfo='label+percent',
         textposition='outside',
         hovertemplate='<b>%{label}</b><br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
