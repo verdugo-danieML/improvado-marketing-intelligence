@@ -95,29 +95,25 @@ def create_kpi_card(title, value, unit, change, change_unit, sparkline_data=None
     # Close container
     st.markdown("</div>", unsafe_allow_html=True)
 
-def create_time_series_chart(df, title="Channel Performance Over Time"):
+def create_time_series_chart(df, group_col='channel', value_col='value', title="Performance Over Time"):
     """Create multi-line time series chart (Improvado style)"""
     fig = go.Figure()
     
-    colors = {
-        'Programmatic': COLORS['primary'],
-        'Paid Search': COLORS['secondary'],
-        'Paid Social': COLORS['tertiary'],
-        'Organic': COLORS['warning']
-    }
+    # Dynamic color mapping based on unique values
+    unique_groups = df[group_col].unique()
+    colors_list = [COLORS['primary'], COLORS['secondary'], COLORS['tertiary'], COLORS['warning'], COLORS['success'], COLORS['danger']]
+    colors = {group: colors_list[i % len(colors_list)] for i, group in enumerate(unique_groups)}
     
-    channels = df['channel'].unique()
-    
-    for channel in channels:
-        channel_data = df[df['channel'] == channel].sort_values('date')
+    for group in unique_groups:
+        group_data = df[df[group_col] == group].sort_values('date')
         
         fig.add_trace(go.Scatter(
-            x=channel_data['date'],
-            y=channel_data['value'],
+            x=group_data['date'],
+            y=group_data[value_col],
             mode='lines',
-            name=channel,
-            line=dict(color=colors.get(channel, COLORS['primary']), width=2),
-            hovertemplate=f'<b>{channel}</b><br>%{{x}}<br>%{{y:,.0f}}<extra></extra>'
+            name=group,
+            line=dict(color=colors.get(group, COLORS['primary']), width=2),
+            hovertemplate=f'<b>{group}</b><br>%{{x}}<br>%{{y:,.0f}}<extra></extra>'
         ))
     
     fig.update_layout(
@@ -167,16 +163,16 @@ def create_time_series_chart(df, title="Channel Performance Over Time"):
 
 def create_channel_performance_table(df):
     """Create Channel Performance table (Improvado style)"""
-    st.markdown("""
-    <div class="css-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style='color: #4B5563; font-size: 14px; font-weight: 600; margin: 0;'>
-                📺 Channel Performance
-            </h3>
-            <div style="color: #9CA3AF; cursor: pointer;">⋮</div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="css-card">', unsafe_allow_html=True)
     
+    col1, col2 = st.columns([0.85, 0.15])
+    with col1:
+        st.markdown("<h3 style='color: #4B5563; font-size: 14px; font-weight: 600; margin: 0;'>📺 Channel Performance</h3>", unsafe_allow_html=True)
+    with col2:
+        if st.button("📈", key="btn_channel", help="Show Channel Graph"):
+            st.session_state.selected_chart = 'channel'
+            st.rerun()
+
     display_df = df[['channel', 'impressions', 'spend_pct', 'ctr']].copy()
     display_df.columns = ['Channel', 'Impressions', '% Δ', 'CTR']
     
@@ -237,15 +233,15 @@ def create_campaign_table(df):
 
 def create_data_source_table_compact(df):
     """Create compact Data Source Performance table for right sidebar"""
-    st.markdown("""
-    <div class="css-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style='color: #4B5563; font-size: 13px; font-weight: 600; margin: 0;'>
-                📊 Data Source Performance
-            </h3>
-            <div style="color: #9CA3AF; cursor: pointer;">⋮</div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="css-card">', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([0.85, 0.15])
+    with col1:
+        st.markdown("<h3 style='color: #4B5563; font-size: 13px; font-weight: 600; margin: 0;'>📊 Data Source Performance</h3>", unsafe_allow_html=True)
+    with col2:
+        if st.button("📈", key="btn_source", help="Show Data Source Graph"):
+            st.session_state.selected_chart = 'source'
+            st.rerun()
     
     # Show only top 5 sources with key metrics
     display_df = df.head(5)[['source', 'impressions', 'ctr']].copy()
@@ -265,15 +261,15 @@ def create_data_source_table_compact(df):
 
 def create_campaign_table_compact(df):
     """Create compact Campaign Performance table for right sidebar"""
-    st.markdown("""
-    <div class="css-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style='color: #4B5563; font-size: 13px; font-weight: 600; margin: 0;'>
-                🎯 Campaign Performance
-            </h3>
-            <div style="color: #9CA3AF; cursor: pointer;">⋮</div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="css-card">', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([0.85, 0.15])
+    with col1:
+        st.markdown("<h3 style='color: #4B5563; font-size: 13px; font-weight: 600; margin: 0;'>🎯 Campaign Performance</h3>", unsafe_allow_html=True)
+    with col2:
+        if st.button("📈", key="btn_campaign", help="Show Campaign Graph"):
+            st.session_state.selected_chart = 'campaign'
+            st.rerun()
     
     # Show only top 5 campaigns with key metrics
     display_df = df.head(5)[['campaign', 'impressions', 'ctr']].copy()

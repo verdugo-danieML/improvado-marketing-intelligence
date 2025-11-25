@@ -175,9 +175,11 @@ def generate_data_source_performance(conn):
     cursor = conn.cursor()
     cursor.execute("DELETE FROM data_source_performance")
     
-    today = datetime.now().date()
+    # Generate data for Jan 2023 - Dec 2023 (12 months)
+    start_date = datetime(2023, 1, 1)
+    dates = [start_date + timedelta(days=30*i) for i in range(12)]
     
-    # Data from reference image
+    # Data from reference image (base values)
     data_sources = [
         ('Amazon Ad Server (Sizmek)', 5.8, -30.0, 10.17, -10.0),
         ('StackAdapt', 4.8, None, 68.7, -7.3),
@@ -188,22 +190,43 @@ def generate_data_source_performance(conn):
         ('Google Search Ads 360', 5.8, -23.6, 10.57, 11.0),
     ]
     
+    records = []
+    import random
+    
+    for date in dates:
+        for ds in data_sources:
+            # Add some random variation to impressions for the time series
+            base_impressions = ds[1]
+            variation = random.uniform(0.8, 1.2)
+            impressions = base_impressions * variation
+            
+            records.append((
+                date.date(),
+                ds[0],
+                impressions,
+                ds[2],
+                ds[3],
+                ds[4]
+            ))
+    
     cursor.executemany("""
         INSERT INTO data_source_performance (date, source, impressions, spend_pct, ctr, conversions_pct)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, [(today, *ds) for ds in data_sources])
+    """, records)
     
     conn.commit()
-    logger.info(f"✓ Generated {len(data_sources)} data source records")
+    logger.info(f"✓ Generated {len(records)} data source records")
 
 def generate_campaign_performance(conn):
     """Generate campaign performance data"""
     cursor = conn.cursor()
     cursor.execute("DELETE FROM campaign_performance")
     
-    today = datetime.now().date()
+    # Generate data for Jan 2023 - Dec 2023 (12 months)
+    start_date = datetime(2023, 1, 1)
+    dates = [start_date + timedelta(days=30*i) for i in range(12)]
     
-    # Campaigns from reference image
+    # Campaigns from reference image (base values)
     campaigns = [
         ('Business-focused zero tolerance architecture', 931, None, 10.42, None),
         ('Persistent 24/7 attitude', 914, None, 9.71, None),
@@ -215,13 +238,32 @@ def generate_campaign_performance(conn):
         ('Networked value-added time-frame', 953, None, 11.54, None),
     ]
     
+    records = []
+    import random
+    
+    for date in dates:
+        for camp in campaigns:
+            # Add some random variation
+            base_impressions = camp[1]
+            variation = random.uniform(0.9, 1.1)
+            impressions = int(base_impressions * variation)
+            
+            records.append((
+                date.date(),
+                camp[0],
+                impressions,
+                camp[2],
+                camp[3],
+                camp[4]
+            ))
+    
     cursor.executemany("""
         INSERT INTO campaign_performance (date, campaign, impressions, spend_pct, ctr, conversions_pct)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, [(today, *camp) for camp in campaigns])
+    """, records)
     
     conn.commit()
-    logger.info(f"✓ Generated {len(campaigns)} campaign records")
+    logger.info(f"✓ Generated {len(records)} campaign records")
 
 def generate_time_series_data(conn):
     """Generate time series data for line chart"""

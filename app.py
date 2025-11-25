@@ -263,6 +263,10 @@ def generate_sparkline_data():
 
 def render_executive_summary(conn):
     """Render Executive Summary dashboard"""
+    # Initialize session state for chart selection
+    if 'selected_chart' not in st.session_state:
+        st.session_state.selected_chart = 'channel'
+
     # Top Navigation Bar (Mock)
     st.markdown("""
     <div class="nav-bar">
@@ -333,9 +337,22 @@ def render_executive_summary(conn):
         # ============= CENTER: TIME SERIES CHART =============
         # Wrap chart in a card container
         st.markdown('<div class="css-card">', unsafe_allow_html=True)
-        time_series = load_time_series(conn)
-        if not time_series.empty:
-            create_time_series_chart(time_series)
+        
+        selected_chart = st.session_state.get('selected_chart', 'channel')
+        
+        if selected_chart == 'channel':
+            time_series = load_time_series(conn)
+            if not time_series.empty:
+                create_time_series_chart(time_series, group_col='channel', value_col='value', title="Channel Performance Over Time")
+        elif selected_chart == 'source':
+            data_sources = load_data_source_performance(conn)
+            if not data_sources.empty:
+                create_time_series_chart(data_sources, group_col='source', value_col='impressions', title="Data Source Performance (Impressions)")
+        elif selected_chart == 'campaign':
+            campaigns = load_campaign_performance(conn)
+            if not campaigns.empty:
+                create_time_series_chart(campaigns, group_col='campaign', value_col='impressions', title="Campaign Performance (Impressions)")
+                
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
