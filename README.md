@@ -97,7 +97,6 @@ improvado-marketing-intelligence/
 
 ## 📚 Documentation
 * [User Guide](docs/USER_GUIDE.md) - Detailed instructions on using the dashboard.
-* [Video Script](docs/VIDEO_SCRIPT.md) - Walkthrough script for the demo video.
 
 ## 📄 License
 MIT License - See LICENSE file for details
